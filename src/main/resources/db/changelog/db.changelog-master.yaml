@@ -1,0 +1,22 @@
+databaseChangeLog:
+    - include:
+          file: db/changelog/changes/01-create-users-table.sql
+    - include:
+          file: db/changelog/changes/02-create-articles-table.sql
+    - include:
+          file: db/changelog/changes/03-create-comments-table.sql
+    - include:
+          file: db/changelog/changes/04-create-user-sessions-table.sql
+    - include:
+          file: db/changelog/changes/05-create-likes-table.sql
+    - include:
+          file: db/changelog/changes/06-create-dislikes-table.sql
+    - include:
+          file: db/changelog/changes/07-create-tokens-table.sql
+    - include:
+          file: db/changelog/changes/08-create-subscriptions-table.sql
+    - include:
+        file: db/changelog/changes/09-create-chats-table.sql
+    - include:
+        file: db/changelog/changes/10-create-messages-table.sql
+

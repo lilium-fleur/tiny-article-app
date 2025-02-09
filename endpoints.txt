@@ -1,0 +1,68 @@
+AUTH
+POST /api/auth/login
+POST /api/auth/register
+POST /api/auth/logout
+GET /api/auth/refresh
+
+
+ARTICLES
+VISIBLE ARTICLES
+api/{userId}/articles
+GET  - получить все публичные посты(статьи и репосты) пользователя
+GET api/{userId}/articles/publish - получить все статьи пользователя
+GET api/{userId}/articles/reposts - получить все репосты пользователя
+
+PUBLISHED
+/api/articles/published
+POST - создать и опубликовать статью
+GET  /{publishedId} - получить статью по id
+PUT  /{publishedId} - изменить
+DELETE /{publishedId} - удалить
+
+REPOSTED
+/api/articles
+POST /{articleId}/repost - сделать репост статьи
+GET /{articleId}/repost - получить все репосты к статье
+GET /repost/{repostId} - получить репост по id
+DELETE /repost/{repostId} - удалить реепост
+PUT /repost/{repostId} - изменить репост
+
+DRAFTS
+/api/articles/drafts
+POST -
+GET -
+GET /{draftId}
+DELETE /{draftId}
+PUT /{draftId}
+POST /{draftId}/publish - опубликовать статью(удлалить черновик и создать опубликованную статью)
+
+COMMENT
+api/articles/{articleId}/comments
+GET
+POST
+POST /{commentId} - ответить на коммент
+PUT /{commentId}
+DELETE /{commentId}
+
+REACTIONS
+/api/articles/{articleId}/reactions
+GET - получить лайки и дизлайки(пока количество)
+POST /likes
+POST /dislikes
+DELETE /likes
+DELETE /dislikes
+
+
+SUBSCRIPTIONS
+/api/{userId}
+POST - подписаться
+DELETE - отписаться
+GET /followers - получить подписчиков
+GET /following - получить подписки
+
+
+USER SESSIONS
+/api/user-sessions
+GET - получить все сессии
+DELETE - удалить все кроме текущей
+DELETE /{id} - удалить конкретную

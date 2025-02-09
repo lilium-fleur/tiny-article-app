@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WebSocket Tester</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        input, textarea {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:disabled {
+            background-color: #cccccc;
+        }
+        #messages {
+            border: 1px solid #ccc;
+            padding: 10px;
+            min-height: 200px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .connected {
+            background-color: #dff0d8;
+            color: #3c763d;
+        }
+        .disconnected {
+            background-color: #f2dede;
+            color: #a94442;
+        }
+        .message {
+            margin: 5px 0;
+            padding: 5px;
+            border-left: 3px solid #4CAF50;
+        }
+        .deleted-message {
+            font-style: italic;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>WebSocket Tester</h2>
+
+    <div id="connectionStatus" class="status disconnected">
+        Disconnected
+    </div>
+
+    <div class="form-group">
+        <label for="serverUrl">Server URL:</label>
+        <input type="text" id="serverUrl" value="http://localhost:8080/websocket" />
+    </div>
+
+    <div class="form-group">
+        <label for="token">Bearer Token:</label>
+        <input type="text" id="token" placeholder="Enter your Bearer token" />
+    </div>
+
+    <div class="form-group">
+        <label for="token">ReceiverId:</label>
+        <input type="text" id="id" placeholder="Enter id" />
+    </div>
+
+    <button onclick="connect()" id="connectBtn">Connect</button>
+    <button onclick="disconnect()" id="disconnectBtn" disabled>Disconnect</button>
+
+    <div class="form-group">
+        <label for="chatId">Chat ID:</label>
+        <input type="text" id="chatId" placeholder="Enter chat ID" />
+    </div>
+
+    <div class="form-group">
+        <label for="sendMessage">Message:</label>
+        <textarea id="sendMessage" placeholder="Enter message content"></textarea>
+    </div>
+    <button onclick="sendMessage()" id="sendBtn" disabled>Send Message</button>
+
+    <div class="form-group">
+        <label for="updateMessage">Message:</label>
+        <textarea id="updateMessage" placeholder="Enter message content"></textarea>
+    </div>
+    <div class="form-group">
+        <label for="msgId">Message ID:</label>
+        <input type="text" id="msgId" placeholder="Enter chat ID" />
+    </div>
+    <button onclick="updateMessage()" id="upBtn" disabled>Update Message</button>
+
+    <div class="form-group">
+        <label for="deleteMessage">Message:</label>
+        <textarea id="deleteMessage" placeholder="Enter message content"></textarea>
+    </div>
+    <button onclick="deleteMessage()" id="delBtn" disabled>Delete Message</button>
+
+
+    <h3>Messages:</h3>
+    <div id="messages"></div>
+    <button onclick="getMessages()" id="getBtn" disabled>Get Messages</button>
+
+</div>
+
+<script>
+    let stompClient = null;
+
+    function connect(options) {
+        const serverUrl = document.getElementById('serverUrl').value;
+        const token = document.getElementById('token').value;
+        const id = document.getElementById('id').value;
+
+        const socket = new SockJS(serverUrl);
+        stompClient = Stomp.over(socket);
+
+        // Connect with token in headers
+        stompClient.connect(
+            {
+                'Authorization': `Bearer ${token}`
+            },
+            function (frame) {
+                setConnected(true);
+                console.log('Connected: ' + frame);
+
+                // Subscribe to user queue
+                stompClient.subscribe('/user/' + id + '/queue/messages', function (message) {
+                    showMessage(JSON.parse(message.body));
+                });
+            },
+            function (error) {
+                console.error('Error: ' + error);
+                setConnected(false);
+            }
+        );
+    }
+
+    function disconnect() {
+        if (stompClient !== null) {
+            stompClient.disconnect();
+        }
+        setConnected(false);
+        console.log("Disconnected");
+    }
+
+    async function sendMessage() {
+        const chatId = document.getElementById('chatId').value;
+        const content = document.getElementById('sendMessage').value;
+        const token = document.getElementById('token').value;
+
+        const message = {
+            content: content
+        };
+
+        try {
+            const response = await fetch(`http://localhost:8080/api/chats/${chatId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify(message)
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to send message');
+            }
+
+            const result = await response.json();
+            console.log('Message sent:', result);
+        } catch (error) {
+            console.error('Error sending message:', error);
+        }
+    }
+
+    async function updateMessage() {
+        const messageId = document.getElementById('msgId').value;
+        const content = document.getElementById('updateMessage').value;
+        const chatId = document.getElementById('chatId').value;
+        const token = document.getElementById('token').value;
+
+        const message = {
+            content: content
+        };
+
+        try {
+            const response = await fetch(`http://localhost:8080/api/chats/${chatId}/messages/${messageId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify(message)
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to update message');
+            }
+
+            const result = await response.json();
+            console.log('Message updated:', result);
+        } catch (error) {
+            console.error('Error updating message:', error);
+        }
+    }
+
+    async function deleteMessage() {
+        const messageId = document.getElementById('msgId').value;
+        const chatId = document.getElementById('chatId').value;
+        const token = document.getElementById('token').value;
+
+        try {
+            const response = await fetch(`http://localhost:8080/api/chats/${chatId}/messages/${messageId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                },
+                credentials: 'include'
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to delete message');
+            }
+
+            console.log('Message deleted successfully');
+        } catch (error) {
+            console.error('Error deleting message:', error);
+        }
+    }
+
+    async function getMessages() {
+        const chatId = document.getElementById('chatId').value;
+        const token = document.getElementById('token').value;
+
+        try {
+            const response = await fetch(`http://localhost:8080/api/chats/${chatId}/messages`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                },
+                credentials: 'include'
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to get messages');
+            }
+
+            const messages = await response.json();
+            showMessageList(messages);
+            console.log('Messages getting successfully');
+        } catch (error) {
+            console.error('Error getting messages:', error);
+        }
+    }
+
+    function showMessageList(messages) {
+        if (!Array.isArray(messages)) {
+            console.error('Expected an array of messages');
+            return;
+        }
+
+        const messagesDiv = document.getElementById('messages');
+        messagesDiv.innerHTML = '';
+
+        messages.forEach(message => {
+            showMessage(message);
+        });
+    }
+
+    function showMessage(message) {
+        const messagesDiv = document.getElementById('messages');
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('message');
+
+        if (message.deleted) {
+            messageElement.textContent = `Message #${message.id} was deleted`;
+            messageElement.classList.add('deleted-message'); // Добавляем класс для стилизации
+        } else {
+            messageElement.textContent = `From ${message.sender} to ${message.recipient}: ${message.content}`;
+        }
+
+        messagesDiv.appendChild(messageElement);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    function setConnected(connected) {
+        const connectBtn = document.getElementById('connectBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
+        const sendBtn = document.getElementById('sendBtn');
+        const upBtn = document.getElementById('upBtn')
+        const delBtn = document.getElementById('delBtn')
+        const status = document.getElementById('connectionStatus');
+        const getBtn = document.getElementById("getBtn");
+
+
+        connectBtn.disabled = connected;
+        disconnectBtn.disabled = !connected;
+        sendBtn.disabled = !connected;
+        upBtn.disabled = !connected;
+        delBtn.disabled = !connected;
+        getBtn.disabled = !connected;
+
+        status.className = `status ${connected ? 'connected' : 'disconnected'}`;
+        status.textContent = connected ? 'Connected' : 'Disconnected';
+
+        if (!connected) {
+            document.getElementById('messages').innerHTML = '';
+        }
+    }
+</script>
+</body>
+</html>

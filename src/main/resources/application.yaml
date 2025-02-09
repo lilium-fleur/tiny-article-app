@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: demo
+
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/demo
+    username: postgres
+    password: root
+
+  liquibase:
+    change-log: db/changelog/db.changelog-master.yaml
+
+  jpa:
+    show-sql: true
+
+    hibernate:
+      ddl-auto: none
+
+
+jwt:
+  secret: 3fca13c99bc65588c85c550d602099c19f9f7f9b5fb566977061b6113580a1147c825aac7f76ddb62e58c65418bf3185dc42d3a799ec689c2eeae1439a8cd1e1
+  access:
+    expiration: 30
+  refresh:
+    expiration: 1440
+
+
