@@ -15,13 +15,13 @@ import org.springframework.transaction.annotation.Transactional;
 public class ArticleService {
 
     private final ArticleRepository<BaseArticle> articleRepository;
-    private final ArticleVisitorImpl visitor;
+    private final ArticleMapperImpl mapper;
 
 
     @Transactional(readOnly = true)
     public Page<ArticleDto> getVisibleArticlesByUser(User user, Pageable pageable) {
-        return articleRepository.findAllArticlesByAuthorId(user, pageable)
-                .map(article -> article.accept(visitor));
+        return articleRepository.findAllVisibleArticlesByAuthorId(user, pageable)
+                .map(article -> article.toDto(mapper));
     }
 
     @Transactional(readOnly = true)

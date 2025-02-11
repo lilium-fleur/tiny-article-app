@@ -7,7 +7,6 @@ import com.example.demo.user.User;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -47,15 +46,14 @@ public class MessageService {
     }
 
     @Transactional(readOnly = true)
-    public MessageResponse getMessages(User user, Long chatId, Long cursor, Integer limit, LoadStrategy strategy) {
+    public MessageResponse getMessages(User user, Long chatId, GetMessagesFilter filter) {
         Chat chat = chatService.findChatByIdAndUser(chatId, user);
+        int normalizedLimit = Math.min(filter.getLimit(), MAX_LIMIT);
 
-        int normalizedLimit = Math.min(limit, MAX_LIMIT);
-
-        return switch (strategy) {
+        return switch (filter.getStrategy()) {
             case LATEST -> getLatestMessages(chat, normalizedLimit);
-            case BEFORE_CURSOR -> getMessagesBefore(chat, cursor, normalizedLimit);
-            case AFTER_CURSOR -> getMessagesAfter(chat, cursor, normalizedLimit);
+            case BEFORE_CURSOR -> getMessagesBefore(chat, filter.getCursor(), normalizedLimit);
+            case AFTER_CURSOR -> getMessagesAfter(chat, filter.getCursor(), normalizedLimit);
         };
     }
 
@@ -89,7 +87,7 @@ public class MessageService {
     private MessageResponse getLatestMessages(Chat chat, int limit) {
         List<Message> messages = messageRepository.findLatestByChat(
                 chat,
-                PageRequest.of(0, limit + 1, Sort.by(Sort.Direction.DESC, "createdAt")));
+                PageRequest.of(0, limit));
 
         return processMessages(messages, limit);
     }
@@ -98,7 +96,9 @@ public class MessageService {
         List<Message> messages = messageRepository.findByChatAndIdGreaterThan(
                 chat,
                 cursor,
-                PageRequest.of(0, limit + 1, Sort.by(Sort.Direction.DESC, "createdAt")));
+                PageRequest.of(0, limit + 1));
+        System.out.println(messages);
+
 
         return processMessages(messages, limit);
     }
@@ -107,7 +107,7 @@ public class MessageService {
         List<Message> messages = messageRepository.findByChatAndIdLessThan(
                 chat,
                 cursor,
-                PageRequest.of(0, limit + 1, Sort.by(Sort.Direction.DESC, "createdAt")));
+                PageRequest.of(0, limit + 1));
 
         return processMessages(messages, limit);
     }
@@ -117,7 +117,6 @@ public class MessageService {
         List<Message> resultMessages = hasMore ? messages.subList(0, limit) : messages;
 
         Long nextCursor = !resultMessages.isEmpty() ? resultMessages.getLast().getId() : null;
-
 
         return MessageResponse.builder()
                 .messages(resultMessages.stream()

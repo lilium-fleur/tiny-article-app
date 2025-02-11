@@ -63,10 +63,16 @@
             margin: 5px 0;
             padding: 5px;
             border-left: 3px solid #4CAF50;
+            background: #f9f9f9;
         }
         .deleted-message {
             font-style: italic;
             color: #888;
+            background: #f5f5f5;
+        }
+        .message-timestamp {
+            font-size: 0.8em;
+            color: #666;
         }
     </style>
 </head>
@@ -89,7 +95,7 @@
     </div>
 
     <div class="form-group">
-        <label for="token">ReceiverId:</label>
+        <label for="id">ReceiverId:</label>
         <input type="text" id="id" placeholder="Enter id" />
     </div>
 
@@ -108,32 +114,34 @@
     <button onclick="sendMessage()" id="sendBtn" disabled>Send Message</button>
 
     <div class="form-group">
-        <label for="updateMessage">Message:</label>
+        <label for="updateMessage">Update Message:</label>
         <textarea id="updateMessage" placeholder="Enter message content"></textarea>
     </div>
     <div class="form-group">
         <label for="msgId">Message ID:</label>
-        <input type="text" id="msgId" placeholder="Enter chat ID" />
+        <input type="text" id="msgId" placeholder="Enter message ID" />
     </div>
     <button onclick="updateMessage()" id="upBtn" disabled>Update Message</button>
 
     <div class="form-group">
-        <label for="deleteMessage">Message:</label>
-        <textarea id="deleteMessage" placeholder="Enter message content"></textarea>
+        <label for="deleteMessage">Delete Message ID:</label>
+        <input type="text" id="deleteMessage" placeholder="Enter message ID to delete" />
     </div>
     <button onclick="deleteMessage()" id="delBtn" disabled>Delete Message</button>
 
-
     <h3>Messages:</h3>
     <div id="messages"></div>
-    <button onclick="getMessages()" id="getBtn" disabled>Get Messages</button>
+    <button onclick="getMessages()" id="getBtn" disabled>Load More Messages</button>
 
 </div>
 
 <script>
     let stompClient = null;
+    let currentCursor = null;
+    let hasMoreMessages = true;
+    const messageStore = new Map(); // Хранилище сообщений
 
-    function connect(options) {
+    function connect() {
         const serverUrl = document.getElementById('serverUrl').value;
         const token = document.getElementById('token').value;
         const id = document.getElementById('id').value;
@@ -141,7 +149,6 @@
         const socket = new SockJS(serverUrl);
         stompClient = Stomp.over(socket);
 
-        // Connect with token in headers
         stompClient.connect(
             {
                 'Authorization': `Bearer ${token}`
@@ -150,9 +157,8 @@
                 setConnected(true);
                 console.log('Connected: ' + frame);
 
-                // Subscribe to user queue
                 stompClient.subscribe('/user/' + id + '/queue/messages', function (message) {
-                    showMessage(JSON.parse(message.body));
+                    handleWebSocketMessage(JSON.parse(message.body));
                 });
             },
             function (error) {
@@ -162,12 +168,59 @@
         );
     }
 
+    function handleWebSocketMessage(message) {
+        if (message.deleted) {
+            // Если сообщение удалено, обновляем его в хранилище
+            messageStore.set(message.id, {
+                ...message,
+                content: 'This message was deleted',
+                className: 'deleted-message'
+            });
+        } else {
+            // Обновляем или добавляем новое сообщение
+            messageStore.set(message.id, message);
+        }
+
+        // Перерисовываем все сообщения
+        refreshMessages();
+    }
+
+    function refreshMessages() {
+        const messagesDiv = document.getElementById('messages');
+        messagesDiv.innerHTML = '';
+
+        // Сортируем сообщения по ID или времени
+        const sortedMessages = Array.from(messageStore.values())
+            .sort((a, b) => a.id - b.id);
+
+        sortedMessages.forEach(message => {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message');
+            if (message.deleted) {
+                messageElement.classList.add('deleted-message');
+            }
+
+            messageElement.innerHTML = `
+                <div class="message-timestamp">${new Date().toLocaleTimeString()}</div>
+                <div>ID: ${message.id}</div>
+                <div>From ${message.sender} to ${message.recipient}:</div>
+                <div>${message.deleted ? 'This message was deleted' : message.content}</div>
+            `;
+
+            messagesDiv.appendChild(messageElement);
+        });
+
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
     function disconnect() {
         if (stompClient !== null) {
             stompClient.disconnect();
         }
         setConnected(false);
         console.log("Disconnected");
+        messageStore.clear();
+        refreshMessages();
     }
 
     async function sendMessage() {
@@ -195,6 +248,7 @@
                 throw new Error('Failed to send message');
             }
 
+            document.getElementById('sendMessage').value = '';
             const result = await response.json();
             console.log('Message sent:', result);
         } catch (error) {
@@ -228,6 +282,8 @@
                 throw new Error('Failed to update message');
             }
 
+            document.getElementById('updateMessage').value = '';
+            document.getElementById('msgId').value = '';
             const result = await response.json();
             console.log('Message updated:', result);
         } catch (error) {
@@ -236,7 +292,7 @@
     }
 
     async function deleteMessage() {
-        const messageId = document.getElementById('msgId').value;
+        const messageId = document.getElementById('deleteMessage').value;
         const chatId = document.getElementById('chatId').value;
         const token = document.getElementById('token').value;
 
@@ -255,6 +311,7 @@
                 throw new Error('Failed to delete message');
             }
 
+            document.getElementById('deleteMessage').value = '';
             console.log('Message deleted successfully');
         } catch (error) {
             console.error('Error deleting message:', error);
@@ -264,9 +321,16 @@
     async function getMessages() {
         const chatId = document.getElementById('chatId').value;
         const token = document.getElementById('token').value;
+        const limit = 40;
+        const strategy = 'LATEST';
+
+        if (!hasMoreMessages) {
+            console.log('No more messages to load');
+            return;
+        }
 
         try {
-            const response = await fetch(`http://localhost:8080/api/chats/${chatId}/messages`, {
+            const response = await fetch(`http://localhost:8080/api/chats/${chatId}/messages/${strategy}/1/limit/${limit}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -276,57 +340,41 @@
                 credentials: 'include'
             });
 
+
             if (!response.ok) {
                 throw new Error('Failed to get messages');
             }
 
-            const messages = await response.json();
-            showMessageList(messages);
-            console.log('Messages getting successfully');
+            const data = await response.json();
+
+            // Обновляем курсор и флаг наличия следующей страницы
+            currentCursor = data.nextCursor;
+            hasMoreMessages = data.hasNext;
+
+            // Добавляем новые сообщения в хранилище
+            data.content.forEach(message => {
+                messageStore.set(message.id, message);
+            });
+
+            // Обновляем отображение
+            refreshMessages();
+
+            document.getElementById('getBtn').disabled = !hasMoreMessages;
+
+            console.log('Messages loaded successfully');
         } catch (error) {
             console.error('Error getting messages:', error);
         }
-    }
-
-    function showMessageList(messages) {
-        if (!Array.isArray(messages)) {
-            console.error('Expected an array of messages');
-            return;
-        }
-
-        const messagesDiv = document.getElementById('messages');
-        messagesDiv.innerHTML = '';
-
-        messages.forEach(message => {
-            showMessage(message);
-        });
-    }
-
-    function showMessage(message) {
-        const messagesDiv = document.getElementById('messages');
-        const messageElement = document.createElement('div');
-        messageElement.classList.add('message');
-
-        if (message.deleted) {
-            messageElement.textContent = `Message #${message.id} was deleted`;
-            messageElement.classList.add('deleted-message'); // Добавляем класс для стилизации
-        } else {
-            messageElement.textContent = `From ${message.sender} to ${message.recipient}: ${message.content}`;
-        }
-
-        messagesDiv.appendChild(messageElement);
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
     }
 
     function setConnected(connected) {
         const connectBtn = document.getElementById('connectBtn');
         const disconnectBtn = document.getElementById('disconnectBtn');
         const sendBtn = document.getElementById('sendBtn');
-        const upBtn = document.getElementById('upBtn')
-        const delBtn = document.getElementById('delBtn')
+        const upBtn = document.getElementById('upBtn');
+        const delBtn = document.getElementById('delBtn');
         const status = document.getElementById('connectionStatus');
         const getBtn = document.getElementById("getBtn");
-
 
         connectBtn.disabled = connected;
         disconnectBtn.disabled = !connected;
@@ -339,7 +387,10 @@
         status.textContent = connected ? 'Connected' : 'Disconnected';
 
         if (!connected) {
-            document.getElementById('messages').innerHTML = '';
+            currentCursor = null;
+            hasMoreMessages = true;
+            messageStore.clear();
+            refreshMessages();
         }
     }
 </script>

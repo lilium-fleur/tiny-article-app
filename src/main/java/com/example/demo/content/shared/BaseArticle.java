@@ -4,7 +4,6 @@ import com.example.demo.user.User;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.hibernate.annotations.Formula;
 
 import java.time.LocalDateTime;
 
@@ -29,6 +28,6 @@ public abstract class BaseArticle {
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    protected abstract <T> T accept(ArticleVisitor<T> visitor);
+    protected abstract <T> T toDto(ArticleMapper<T> visitor);
 
 }

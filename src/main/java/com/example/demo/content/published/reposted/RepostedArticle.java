@@ -1,7 +1,7 @@
 package com.example.demo.content.published.reposted;
 
 import com.example.demo.content.published.article.PublishedArticle;
-import com.example.demo.content.shared.ArticleVisitor;
+import com.example.demo.content.shared.ArticleMapper;
 import com.example.demo.content.shared.BaseArticle;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -24,11 +24,10 @@ public class RepostedArticle extends BaseArticle {
     @JoinColumn(name = "original_id")
     private PublishedArticle original;
 
-    private String comment;
-
+    private String content;
 
     @Override
-    protected <T> T accept(ArticleVisitor<T> visitor) {
-        return visitor.visitRepostedArticle(this);
+    protected <T> T toDto(ArticleMapper<T> mapper) {
+        return mapper.mapRepostedArticle(this);
     }
 }

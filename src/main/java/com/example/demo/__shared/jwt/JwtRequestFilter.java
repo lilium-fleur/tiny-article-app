@@ -34,8 +34,8 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String authHeader = request.getHeader("Authorization");
-        String jwt = null;
-        String username = null;
+        String jwt;
+        String username;
         String fingerprint = userSessionService.getFingerprint(request);
 
 

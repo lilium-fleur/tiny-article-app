@@ -1,4 +1,4 @@
-package com.example.demo.subscriptions;
+package com.example.demo.subscription;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

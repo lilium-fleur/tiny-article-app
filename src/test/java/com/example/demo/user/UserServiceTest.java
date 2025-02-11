@@ -2,9 +2,6 @@ package com.example.demo.user;
 
 import com.example.demo.__shared.exception.BadRequestException;
 import com.example.demo.auth.dto.RegisterDto;
-import com.example.demo.content.shared.ArticleRepository;
-import com.example.demo.content.shared.BaseArticle;
-import com.example.demo.content.shared.dto.ArticleDto;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;

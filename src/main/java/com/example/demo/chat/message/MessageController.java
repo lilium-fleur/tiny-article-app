@@ -1,16 +1,13 @@
 package com.example.demo.chat.message;
 
-import com.example.demo.chat.message.dto.CreateMessageDto;
-import com.example.demo.chat.message.dto.MessageDto;
-import com.example.demo.chat.message.dto.MessageResponse;
-import com.example.demo.chat.message.dto.UpdateMessageDto;
+import com.example.demo.chat.message.dto.*;
 import com.example.demo.user.User;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/chats/{chatId}")
@@ -43,14 +40,12 @@ public class MessageController {
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/messages/{strategy}/{cursor}/limit/{limit}")
+    @GetMapping("/messages")
     public ResponseEntity<MessageResponse> getMessages(
             @AuthenticationPrincipal User user,
             @PathVariable Long chatId,
-            @PathVariable LoadStrategy strategy,
-            @PathVariable(required = false) Long cursor,
-            @PathVariable Integer limit) {
-        return ResponseEntity.ok(messageService.getMessages(user, chatId, cursor, limit, strategy));
+            @Valid @ModelAttribute GetMessagesFilter filter) {
+        return ResponseEntity.ok(messageService.getMessages(user, chatId, filter));
     }
 
 

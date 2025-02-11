@@ -1,6 +1,6 @@
-package com.example.demo.subscriptions;
+package com.example.demo.subscription;
 
-import com.example.demo.subscriptions.dto.SubscriptionDto;
+import com.example.demo.subscription.dto.SubscriptionDto;
 import com.example.demo.user.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

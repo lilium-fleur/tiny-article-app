@@ -5,7 +5,4 @@ import org.springframework.stereotype.Component;
 
 
 @Component
-public interface ArticleDto {
-
-
-}
+public interface ArticleDto {}

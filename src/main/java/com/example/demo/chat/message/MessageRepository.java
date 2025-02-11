@@ -12,20 +12,20 @@ import java.util.List;
 public interface MessageRepository extends JpaRepository<Message, Long> {
     @Query("SELECT m FROM Message m " +
             "WHERE m.chat = :chat " +
-            "ORDER BY m.createdAt DESC")
+            "ORDER BY m.id DESC")
     List<Message> findLatestByChat(Chat chat, Pageable pageable);
 
 
     @Query("SELECT m FROM Message m " +
             "WHERE m.chat = :chat " +
             "AND m.id < :cursor " +
-            "ORDER BY m.createdAt DESC")
+            "ORDER BY m.id DESC")
     List<Message> findByChatAndIdLessThan(Chat chat, Long cursor, Pageable pageable);
 
     @Query("SELECT m FROM Message m " +
             "WHERE m.chat = :chat " +
             "AND m.id > :cursor " +
-            "ORDER BY m.createdAt DESC")
+            "ORDER BY m.id")
     List<Message> findByChatAndIdGreaterThan(Chat chat, Long cursor, Pageable pageable);
 
 }

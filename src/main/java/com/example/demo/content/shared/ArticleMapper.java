@@ -5,7 +5,7 @@ import com.example.demo.content.published.reposted.RepostedArticle;
 import org.springframework.stereotype.Component;
 
 @Component
-public interface ArticleVisitor<T> {
-    T visitPublishedArticle(PublishedArticle article);
-    T visitRepostedArticle(RepostedArticle article);
+public interface ArticleMapper<T> {
+    T mapPublishedArticle(PublishedArticle article);
+    T mapRepostedArticle(RepostedArticle article);
 }

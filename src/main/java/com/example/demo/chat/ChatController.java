@@ -1,8 +1,6 @@
 package com.example.demo.chat;
 
 import com.example.demo.chat.dto.ChatDto;
-import com.example.demo.chat.message.MessageService;
-import com.example.demo.chat.message.dto.MessageDto;
 import com.example.demo.user.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -16,7 +14,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ChatController {
     private final ChatService chatService;
-    private final MessageService messageService;
 
     @PostMapping("/create/{userId}")
     public ResponseEntity<ChatDto> createChat(
@@ -31,5 +28,12 @@ public class ChatController {
         return ResponseEntity.ok(chatService.getAllChats(user));
     }
 
+    @DeleteMapping("/{chatId}")
+    public ResponseEntity<Void> deleteChat(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long chatId) {
+        chatService.deleteChat(chatId, user);
+        return ResponseEntity.noContent().build();
+    }
 
 }

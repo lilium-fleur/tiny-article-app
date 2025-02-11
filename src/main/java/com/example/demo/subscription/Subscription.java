@@ -1,4 +1,4 @@
-package com.example.demo.subscriptions;
+package com.example.demo.subscription;
 
 import com.example.demo.user.User;
 import jakarta.persistence.*;

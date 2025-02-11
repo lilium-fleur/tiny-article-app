@@ -1,6 +1,6 @@
 package com.example.demo.content.draft;
 
-import com.example.demo.content.shared.ArticleVisitor;
+import com.example.demo.content.shared.ArticleMapper;
 import com.example.demo.content.shared.BaseArticle;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -26,7 +26,7 @@ public class DraftArticle extends BaseArticle {
     private String content;
 
     @Override
-    protected <T> T accept(ArticleVisitor<T> visitor) {
+    protected <T> T toDto(ArticleMapper<T> visitor) {
         return null;
     }
 }

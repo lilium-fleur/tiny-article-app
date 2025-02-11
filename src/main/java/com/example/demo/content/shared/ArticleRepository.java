@@ -20,7 +20,7 @@ public interface ArticleRepository<T extends BaseArticle> extends JpaRepository<
     @Query("SELECT a FROM #{#entityName} a " +
             "WHERE a.author = :user " +
             "AND TYPE(a) IN (PublishedArticle, RepostedArticle)" )
-    Page<T> findAllArticlesByAuthorId(User user, Pageable pageable);
+    Page<T> findAllVisibleArticlesByAuthorId(User user, Pageable pageable);
 
 
     @Query("SELECT a FROM #{#entityName} a " +

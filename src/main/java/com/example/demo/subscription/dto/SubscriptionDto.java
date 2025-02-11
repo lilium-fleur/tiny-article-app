@@ -1,4 +1,4 @@
-package com.example.demo.subscriptions.dto;
+package com.example.demo.subscription.dto;
 
 import java.time.LocalDateTime;
 

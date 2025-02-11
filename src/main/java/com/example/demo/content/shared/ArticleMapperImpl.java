@@ -10,18 +10,18 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class ArticleVisitorImpl implements ArticleVisitor<ArticleDto> {
+public class ArticleMapperImpl implements ArticleMapper<ArticleDto> {
     private final PublishedArticleMapper publishedArticleMapper;
     private final RepostedArticleMapper repostedArticleMapper;
 
 
     @Override
-    public ArticleDto visitPublishedArticle(PublishedArticle article) {
+    public ArticleDto mapPublishedArticle(PublishedArticle article) {
         return publishedArticleMapper.toDto(article);
     }
 
     @Override
-    public ArticleDto visitRepostedArticle(RepostedArticle article) {
+    public ArticleDto mapRepostedArticle(RepostedArticle article) {
         return repostedArticleMapper.toDto(article);
     }
 }
